@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="id"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1220"><link rel="manifest" href="manifest.webmanifest">
+<title>Trading Analyzer Pro</title>
+<style>
+:root{--bg:#080e19;--panel:#111b2b;--line:#26364d;--txt:#e8eef8;--muted:#91a2bb;--green:#20c997;--red:#ff657a;--gold:#f3bd55}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#0b1423,#070b13);color:var(--txt);font:14px system-ui,sans-serif}
+header{padding:16px;position:sticky;top:0;background:#0b1220ed;z-index:4;border-bottom:1px solid var(--line)}
+.brand{display:flex;justify-content:space-between;align-items:center}.brand h1{font-size:19px;margin:0}.brand small{color:var(--muted)}.live{font-size:11px;color:var(--green);border:1px solid #1d6656;padding:5px 8px;border-radius:20px}
+main{max-width:980px;margin:auto;padding:14px;display:grid;gap:12px}.card{background:linear-gradient(145deg,var(--panel),#0f1928);border:1px solid var(--line);border-radius:15px;padding:14px}
+.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}.muted{color:var(--muted)}label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+select,input,button{background:#0b1422;color:var(--txt);border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit}select,input{min-width:0}button{cursor:pointer;font-weight:650}button.primary{background:#176b59;border-color:#218d74}
+#symbol{flex:1;min-width:150px}#tf{width:88px}.price{font-size:27px;font-weight:750}.green{color:var(--green)}.red{color:var(--red)}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.metric,.level,.ind{background:#0b1422;border:1px solid var(--line);border-radius:10px;padding:10px}.metric b,.level b,.ind b{display:block;margin-top:5px;overflow-wrap:anywhere}
+.signal{display:flex;align-items:center;justify-content:space-between;gap:12px}.signal strong{font-size:23px}.pill{padding:6px 10px;border-radius:30px;font-weight:750;font-size:12px;background:#26364d}.pill.buy{background:#123e35;color:#53e0b4}.pill.sell{background:#4a202a;color:#ff8797}.pill.wait{color:#ffd27d;background:#46371d}
+.levels{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.indicators{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+small,.note{color:var(--muted)}.note{font-size:12px;line-height:1.5}canvas{width:100%;height:230px;display:block;background:#0a1320;border-radius:10px;border:1px solid var(--line)}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.formgrid>div{min-width:0}.formgrid input{width:100%}.status{font-size:12px;color:var(--muted);min-height:18px}
+@media(max-width:560px){.levels{grid-template-columns:repeat(2,1fr)}.indicators{grid-template-columns:repeat(3,1fr)}.price{font-size:23px}}
+</style></head>
+<body>
+<header><div class="brand"><div><h1>TRADING ANALYZER <span style="color:var(--gold)">PRO</span></h1><small>Forex • Gold • Crypto | Auto technical analysis</small></div><span class="live">● LIVE DATA</span></div></header>
+<main>
+<section class="card">
+ <div class="row">
+  <select id="market" aria-label="Jenis pasar"><option value="crypto">CRYPTO</option><option value="forex">FOREX</option><option value="gold">GOLD / XAUUSD</option></select>
+  <select id="symbol" aria-label="Instrumen"></select>
+  <select id="tf" aria-label="Timeframe"><option value="1min">M1</option><option value="5min" selected>M5</option><option value="15min">M15</option><option value="30min">M30</option><option value="1h">H1</option><option value="4h">H4</option></select>
+  <button class="primary" id="refresh">Analisis</button>
+ </div>
+ <div class="row between" style="margin-top:14px"><div><div class="muted" id="pairname">BTC / USDT</div><div class="price" id="price">Memuat…</div></div><div style="text-align:right"><div id="change">—</div><small id="updated">Menunggu data pasar</small></div></div>
+ <div class="metrics"><div class="metric"><small>TREND</small><b id="trend">—</b></div><div class="metric"><small>VOLATILITAS</small><b id="vol">—</b></div><div class="metric"><small>SUMBER DATA</small><b id="feed">Connecting</b></div></div>
+</section>
+<section class="card">
+ <div class="signal"><div><div class="muted">REKOMENDASI SISTEM</div><strong id="signal">MENUNGGU DATA</strong><div class="note" id="reason">Mengambil candle pasar…</div></div><span class="pill wait" id="confidence">—</span></div>
+ <div class="levels" style="margin-top:14px"><div class="level"><small>ENTRY ZONE</small><b id="entry">—</b></div><div class="level"><small>STOP LOSS</small><b class="red" id="sl">—</b></div><div class="level"><small>TAKE PROFIT 1</small><b class="green" id="tp1">—</b></div><div class="level"><small>TAKE PROFIT 2 / 3</small><b class="green" id="tp23">—</b></div></div>
+ <p class="note">Sinyal memakai EMA50/200, RSI, MACD, Stochastic, CCI dan ATR. Tunggu candle konfirmasi dan perhatikan spread broker. Rekomendasi bukan perintah transaksi.</p>
+</section>
+<section class="card"><div class="row between"><b>PRICE CHART</b><small id="chartlabel">Candlestick</small></div><canvas id="chart" width="900" height="360"></canvas></section>
+<section class="card"><b>INDICATOR PANEL</b><div class="indicators" style="margin-top:12px">
+ <div class="ind"><small>EMA 50</small><b id="ema50">—</b></div><div class="ind"><small>EMA 200</small><b id="ema200">—</b></div><div class="ind"><small>RSI 14</small><b id="rsi">—</b></div><div class="ind"><small>MACD</small><b id="macd">—</b></div><div class="ind"><small>STOCH</small><b id="stoch">—</b></div><div class="ind"><small>CCI 20</small><b id="cci">—</b></div></div>
+ <div class="metrics"><div class="metric"><small>SUPPORT</small><b id="support">—</b></div><div class="metric"><small>RESISTANCE</small><b id="resistance">—</b></div><div class="metric"><small>RISK / REWARD</small><b id="rr">1 : 2</b></div></div>
+</section>
+<section class="card"><b>PENGATURAN DATA & RISIKO</b>
+ <p class="note">Crypto menggunakan Binance public data. Forex dan XAUUSD memakai Twelve Data. Masukkan API key Twelve Data milik Anda untuk mengambil data instrumen tersebut. API key hanya disimpan sementara selama halaman terbuka dan tidak dimasukkan ke file ZIP.</p>
+ <div class="formgrid"><div><label>API key Twelve Data</label><input id="apikey" type="password" placeholder="Masukkan API key"></div><div><label>Modal akun (USD)</label><input id="capital" type="number" value="1000" min="1"></div><div><label>Risiko per transaksi (%)</label><input id="risk" type="number" value="1" min=".1" max="5" step=".1"></div><div><label>Refresh data (detik)</label><input value="15" disabled></div></div>
+ <p class="note" id="riskcalc">Estimasi risiko dihitung setelah sinyal tersedia.</p><div class="status" id="status">Siap menghubungkan sumber data.</div>
+</section>
+</main><footer style="text-align:center;padding:8px 16px 24px;font-size:11px">Trading Analyzer Pro V1.1 • Prototipe analisis • Bukan penasihat keuangan</footer>
+<script>
+const $=id=>document.getElementById(id);let candles=[],timer=null,ws=null,lastClose=0;
+const lists={crypto:[['BTCUSDT','BTC / USDT'],['ETHUSDT','ETH / USDT'],['BNBUSDT','BNB / USDT'],['SOLUSDT','SOL / USDT'],['ZECUSDT','ZEC / USDT'],['XRPUSDT','XRP / USDT'],['ADAUSDT','ADA / USDT'],['DOGEUSDT','DOGE / USDT'],['LTCUSDT','LTC / USDT']],forex:[['EUR/USD','EURUSD'],['GBP/USD','GBPUSD'],['USD/JPY','USDJPY'],['AUD/USD','AUDUSD'],['USD/CHF','USDCHF'],['USD/CAD','USDCAD'],['NZD/USD','NZDUSD'],['EUR/JPY','EURJPY'],['GBP/JPY','GBPJPY']],gold:[['XAU/USD','XAUUSD • Gold Spot']]};
+const mapTf={'1min':'1m','5min':'5m','15min':'15m','30min':'30m','1h':'1h','4h':'4h'};
+const fmt=n=>Number.isFinite(n)?n.toLocaleString('en-US',{maximumFractionDigits:n>100?2:6}):'—';
+function fillSymbols(){let m=$('market').value;$('symbol').innerHTML='';lists[m].forEach(([v,t])=>{let o=document.createElement('option');o.value=v;o.textContent=t;$('symbol').appendChild(o)});load()}
+async function load(){
+ if(timer)clearInterval(timer);if(ws){ws.close();ws=null}candles=[];let market=$('market').value,sym=$('symbol').value,tf=$('tf').value;
+ $('pairname').textContent=$('symbol').selectedOptions[0]?.textContent||sym;$('chartlabel').textContent=`Candlestick • ${market.toUpperCase()} • ${tf.toUpperCase()}`;$('status').textContent='Mengambil data candle…';$('feed').textContent='Connecting';
+ if(market==='crypto'){
+  try{let url=`https://api.binance.com/api/v3/klines?symbol=${sym}&interval=${mapTf[tf]}&limit=300`,d=await fetch(url).then(r=>{if(!r.ok)throw Error('Binance HTTP '+r.status);return r.json()});candles=d.map(x=>({t:x[0],o:+x[1],h:+x[2],l:+x[3],c:+x[4],v:+x[5]}));if(!candles.length)throw Error('Data kosong');render();analyze();$('feed').textContent='BINANCE LIVE';$('status').textContent='Crypto live melalui Binance WebSocket.';
+  let stream=`wss://stream.binance.com:9443/ws/${sym.toLowerCase()}@kline_${mapTf[tf]}`;ws=new WebSocket(stream);ws.onmessage=e=>{let k=JSON.parse(e.data).k,b={t:k.t,o:+k.o,h:+k.h,l:+k.l,c:+k.c,v:+k.v};if(candles.at(-1)?.t===b.t)candles[candles.length-1]=b;else candles.push(b);if(candles.length>300)candles.shift();render();analyze()};
+  }catch(e){$('status').textContent='Gagal mengambil crypto: '+e.message}
+ }else{
+  let key=$('apikey').value.trim();if(!key){$('status').textContent='Masukkan API key Twelve Data untuk Forex dan XAUUSD.';$('feed').textContent='API KEY REQUIRED';return}
+  try{await loadTwelve(market,sym,tf,key);timer=setInterval(()=>loadTwelve(market,sym,tf,key),15000)}catch(e){$('status').textContent='Twelve Data: '+e.message;$('feed').textContent='ERROR'}
+ }
+}
+async function loadTwelve(market,sym,tf,key){
+ let url=`https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(sym)}&interval=${tf}&outputsize=300&apikey=${encodeURIComponent(key)}`;
+ let d=await fetch(url).then(r=>r.json());if(d.status==='error'||!d.values)throw Error(d.message||'Tidak ada data. Periksa API key, simbol, kuota, dan paket data.');
+ candles=d.values.slice().reverse().map(x=>({t:x.datetime,o:+x.open,h:+x.high,l:+x.low,c:+x.close,v:+(x.volume||0)})).filter(x=>Number.isFinite(x.c));
+ if(candles.length<205)throw Error('Data historis kurang dari 205 candle untuk EMA200.');
+ render();analyze();$('feed').textContent='TWELVE DATA';$('status').textContent='Data '+sym+' diperbarui '+new Date().toLocaleTimeString('id-ID')+'. Polling 15 detik; streaming real-time tergantung paket API.';
+}
+function ema(a,p){let k=2/(p+1),v=a[0],o=[];for(let x of a){v=x*k+v*(1-k);o.push(v)}return o}
+function rsi(a,p=14){let g=0,l=0;for(let i=a.length-p;i<a.length;i++){let d=a[i]-a[i-1];if(d>0)g+=d;else l-=d}let rs=(g/p)/((l/p)||1e-10);return 100-100/(1+rs)}
+function macd(a){let x=ema(a,12),y=ema(a,26),z=x.map((v,i)=>v-y[i]),s=ema(z,9);return[z.at(-1),s.at(-1)]}
+function stoch(a){let s=a.slice(-14),hi=Math.max(...s.map(x=>x.h)),lo=Math.min(...s.map(x=>x.l));return hi===lo?50:100*(a.at(-1).c-lo)/(hi-lo)}
+function cci(a){let s=a.slice(-20),v=s.map(x=>(x.h+x.l+x.c)/3),m=v.reduce((x,y)=>x+y,0)/v.length,dev=v.reduce((x,y)=>x+Math.abs(y-m),0)/v.length;return dev?(v.at(-1)-m)/(.015*dev):0}
+function analyze(){
+ if(candles.length<205)return;let a=candles.map(x=>x.c),p=a.at(-1),e50=ema(a,50).at(-1),e200=ema(a,200).at(-1),rv=rsi(a),[ml,ms]=macd(a),st=stoch(candles),cc=cci(candles),up=e50>e200&&p>e50,dn=e50<e200&&p<e50,score=(up?2:dn?-2:0)+(rv>52?1:rv<48?-1:0)+(ml>ms?1:-1)+(st>55?1:st<45?-1:0)+(cc>0?1:cc<0?-1:0),dir=score>=3?'BUY':score<=-3?'SELL':'WAIT';
+ let tr=candles.slice(-14),atr=tr.reduce((s,x)=>s+(x.h-x.l),0)/tr.length,lo=p-atr*.2,hi=p+atr*.2,sl=dir==='BUY'?p-atr*1.5:p+atr*1.5,tp1=dir==='BUY'?p+atr*1.5:p-atr*1.5,tp2=dir==='BUY'?p+atr*2.5:p-atr*2.5,tp3=dir==='BUY'?p+atr*3.5:p-atr*3.5,recent=candles.slice(-50);
+ $('price').textContent=fmt(p);$('updated').textContent='Update '+new Date().toLocaleTimeString('id-ID');$('change').textContent=((p-a.at(-2))/a.at(-2)*100).toFixed(3)+'% candle';$('change').className=p>=a.at(-2)?'green':'red';
+ $('trend').textContent=up?'Bullish':dn?'Bearish':'Sideways';$('vol').textContent=atr/p*100>.6?'Tinggi':atr/p*100>.25?'Sedang':'Rendah';
+ $('signal').textContent=dir;$('signal').className=dir==='BUY'?'green':dir==='SELL'?'red':'';$('confidence').textContent=`Skor ${Math.abs(score)}/6`;$('confidence').className='pill '+(dir==='BUY'?'buy':dir==='SELL'?'sell':'wait');
+ $('reason').textContent=dir==='WAIT'?'Konfirmasi indikator belum cukup kuat. Tunggu candle berikutnya.':`Konfirmasi ${dir}: tren EMA, momentum dan oscillator mendukung. Tunggu harga masuk zona dan konfirmasi candle.`;
+ $('entry').textContent=fmt(lo)+' – '+fmt(hi);$('sl').textContent=fmt(sl);$('tp1').textContent=fmt(tp1);$('tp23').textContent=fmt(tp2)+' / '+fmt(tp3);
+ $('ema50').textContent=fmt(e50);$('ema200').textContent=fmt(e200);$('rsi').textContent=rv.toFixed(1);$('macd').textContent=ml>ms?'Bullish':'Bearish';$('stoch').textContent=st.toFixed(1);$('cci').textContent=cc.toFixed(0);
+ $('support').textContent=fmt(Math.min(...recent.map(x=>x.l)));$('resistance').textContent=fmt(Math.max(...recent.map(x=>x.h)));
+ let risk=+$('capital').value*(+$('risk').value/100);$('riskcalc').textContent=`Risiko uang: sekitar $${fmt(risk)}. Jarak entry–SL: ${fmt(Math.abs(p-sl))} unit harga. Lot forex/XAU harus disesuaikan dengan contract size dan spesifikasi broker.`;
+}
+function render(){let c=$('chart'),ctx=c.getContext('2d'),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);if(!candles.length)return;let d=candles.slice(-75),mn=Math.min(...d.map(x=>x.l)),mx=Math.max(...d.map(x=>x.h)),pad=(mx-mn)*.08||1;mn-=pad;mx+=pad;ctx.strokeStyle='#203149';for(let i=1;i<5;i++){let y=h*i/5;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}let step=w/d.length,bw=Math.max(3,step*.58);d.forEach((x,i)=>{let xx=i*step+step/2,yo=h-(x.o-mn)/(mx-mn)*h,yc=h-(x.c-mn)/(mx-mn)*h,yh=h-(x.h-mn)/(mx-mn)*h,yl=h-(x.l-mn)/(mx-mn)*h;ctx.strokeStyle=ctx.fillStyle=x.c>=x.o?'#20c997':'#ff657a';ctx.beginPath();ctx.moveTo(xx,yh);ctx.lineTo(xx,yl);ctx.stroke();ctx.fillRect(xx-bw/2,Math.min(yo,yc),bw,Math.max(1,Math.abs(yc-yo)))});ctx.fillStyle='#9aacc5';ctx.font='14px sans-serif';ctx.fillText(fmt(mx),8,16);ctx.fillText(fmt(mn),8,h-8)}
+$('market').addEventListener('change',fillSymbols);$('symbol').addEventListener('change',load);$('tf').addEventListener('change',load);$('refresh').addEventListener('click',load);$('apikey').addEventListener('change',load);$('capital').addEventListener('change',analyze);$('risk').addEventListener('change',analyze);
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));fillSymbols();
+</script></body></html>
